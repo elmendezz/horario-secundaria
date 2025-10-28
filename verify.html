@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Usuarios - Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { justify-content: flex-start; padding: 2em; }
+        .admin-container { max-width: 800px; margin: 0 auto; }
+        .user-card {
+            background-color: var(--container-bg);
+            border-radius: 10px;
+            padding: 1em;
+            margin-bottom: 1em;
+            box-shadow: var(--container-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-card.approved { border-left: 4px solid #28a745; }
+        .user-card.pending { border-left: 4px solid #ffc107; }
+        .user-actions button {
+            margin-left: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            color: white;
+        }
+        .approve-btn { background-color: #28a745; }
+        .deny-btn { background-color: #dc3545; }
+        .loading-spinner { text-align: center; font-size: 2em; padding: 2em; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1 style="color: var(--accent-color); text-align: center;">Panel de Verificación</h1>
+        <div id="user-list">
+            <div class="loading-spinner">🔄 Cargando usuarios...</div>
+        </div>
+        <div style="text-align: center; margin-top: 2em;">
+            <a href="index.html" class="styled-button" style="background-color: #6c757d;">Volver al Horario</a>
+        </div>
+    </div>
+
+    <script>
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.dataset.theme = savedTheme;
+
+        const userList = document.getElementById('user-list');
+
+        async function fetchUsers() {
+            try {
+                const response = await fetch('/api/messages?users=true');
+                const users = await response.json();
+                renderUsers(users);
+            } catch (error) {
+                userList.innerHTML = `<p style="color: #dc3545; text-align: center;">Error al cargar los usuarios.</p>`;
+                console.error('Error fetching users:', error);
+            }
+        }
+
+        function renderUsers(users) {
+            userList.innerHTML = '<h2>Usuarios Registrados</h2>';
+            if (Object.keys(users).length === 0) {
+                userList.innerHTML += '<p>No hay usuarios registrados.</p>';
+                return;
+            }
+            for (const username in users) {
+                const status = users[username];
+                const card = document.createElement('div');
+                card.className = `user-card ${status}`;
+                
+                const nameEl = document.createElement('strong');
+                nameEl.textContent = username;
+
+                const actionsEl = document.createElement('div');
+                actionsEl.className = 'user-actions';
+
+                if (status === 'pending') {
+                    const approveBtn = document.createElement('button');
+                    approveBtn.className = 'approve-btn';
+                    approveBtn.textContent = 'Aprobar';
+                    approveBtn.onclick = () => updateUserStatus(username, 'approved');
+                    actionsEl.appendChild(approveBtn);
+                }
+
+                const denyBtn = document.createElement('button');
+                denyBtn.className = 'deny-btn';
+                denyBtn.textContent = 'Denegar/Eliminar';
+                denyBtn.onclick = () => updateUserStatus(username, 'denied');
+                actionsEl.appendChild(denyBtn);
+
+                card.appendChild(nameEl);
+                card.appendChild(actionsEl);
+                userList.appendChild(card);
+            }
+        }
+
+        async function updateUserStatus(username, status, cardElement) {
+            // Deshabilitar botones para prevenir clics múltiples
+            cardElement.querySelectorAll('button').forEach(btn => btn.disabled = true);
+            cardElement.style.opacity = '0.5';
+
+            try {
+                const response = await fetch('/api/messages', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'update_status', username, status })
+                });
+                if (!response.ok) throw new Error('Falló la actualización de estado en el servidor');
+                
+                // Actualización optimista: remover la tarjeta de la UI sin recargar toda la lista
+                cardElement.remove();
+
+            } catch (error) {
+                // Si falla, revertir los cambios en la UI
+                cardElement.querySelectorAll('button').forEach(btn => btn.disabled = false);
+                cardElement.style.opacity = '1';
+                alert('Error al actualizar el estado del usuario.');
+                console.error('Error updating status:', error);
+            }
+        }
+
+        // Proteger la página con PIN
+        document.addEventListener('DOMContentLoaded', () => {
+            const pin = prompt('Ingresa el PIN de administrador para continuar:');
+            if (pin === '26435') {
+                fetchUsers();
+            } else {
+                alert('PIN incorrecto. No tienes acceso a esta página.');
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>

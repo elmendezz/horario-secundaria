@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toolbox de Anuncios - Horario 1CV</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            justify-content: flex-start;
+            padding: 2em;
+        }
+        .main-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .toolbox-card, .history-card {
+            background-color: var(--container-bg);
+            padding: 2em;
+            border-radius: 15px;
+            box-shadow: var(--container-shadow);
+            margin-bottom: 2em;
+        }
+        h1, h2 {
+            color: var(--accent-color);
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 1em;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5em;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .announcement-list {
+            list-style: none;
+            padding: 0;
+        }
+        .announcement-list li {
+            background-color: var(--bg-color);
+            padding: 1em;
+            padding-left: 3em; /* Espacio para el checkbox */
+            border-radius: 8px;
+            margin-bottom: 1em;
+            border-left: 4px solid;
+            position: relative;
+        }
+        .announcement-list li input[type="checkbox"] {
+            position: absolute;
+            left: 1em;
+            top: 50%;
+            transform: translateY(-50%) scale(1.5);
+        }
+        .announcement-list li.info { border-left-color: #17a2b8; }
+        .announcement-list li.warning { border-left-color: #ffc107; }
+        .announcement-list li.success { border-left-color: #28a745; }
+
+        .announcement-list li h3 { margin: 0 0 0.5em 0; }
+        .announcement-list li p { margin: 0; }
+
+        .delete-button {
+            background-color: #dc3545;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <h1 id="admin-greeting">Toolbox de Anuncios</h1>
+
+        <!-- Card para crear anuncios -->
+        <div class="toolbox-card">
+            <h2>Crear Nuevo Anuncio</h2>
+            <form id="announcement-form">
+                <div class="form-group">
+                    <label for="title">Título:</label>
+                    <input type="text" id="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="content">Contenido:</label>
+                    <textarea id="content" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="type">Tipo de Anuncio:</label>
+                    <select id="type">
+                        <option value="info">Información (Azul)</option>
+                        <option value="warning">Advertencia (Amarillo)</option>
+                        <option value="success">Éxito (Verde)</option>
+                    </select>
+                </div>
+                <button type="submit" class="styled-button">Publicar Anuncio</button>
+            </form>
+        </div>
+
+        <!-- Card para el historial y borrado -->
+        <div class="history-card">
+            <h2>Historial de Anuncios</h2>
+            <ul id="announcement-list">
+                <li>Cargando anuncios...</li>
+            </ul>
+            <button id="delete-selected-btn" class="styled-button delete-button">Borrar Seleccionados</button>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="index.html" class="styled-button" style="background-color: #6c757d;">Volver al Horario</a>
+        </div>
+    </div>
+
+    <script>
+        // Mantener tema
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.dataset.theme = savedTheme;
+
+        const announcementList = document.getElementById('announcement-list');
+        const announcementChannel = new BroadcastChannel('announcement_channel');
+        let sendMessageToSW = () => console.warn('sendMessageToSW no está disponible.');
+        let currentAdmin = null;
+
+        async function fetchAnnouncements() {
+            try {
+                const response = await fetch('/api/messages?announcements=true');
+                const announcements = await response.json();
+                announcementList.innerHTML = '';
+
+                if (announcements.length === 0) {
+                    announcementList.innerHTML = '<li>No hay anuncios para mostrar.</li>';
+                } else {
+                    announcements.slice().reverse().forEach(ann => {
+                        const li = document.createElement('li');
+                        li.className = ann.type || 'info';
+                        
+                        // Solo el super-admin o el autor pueden borrar
+                        const canDelete = currentAdmin.profile === 'elmendezz' || currentAdmin.profile === ann.author;
+                        const checkboxHTML = canDelete 
+                            ? `<input type="checkbox" value="${ann.id}" class="delete-checkbox">` 
+                            : '';
+
+                        const authorHTML = ann.author ? `<small style="color: #888;">Por: ${ann.author}</small>` : '';
+
+                        li.innerHTML = `
+                            ${checkboxHTML}
+                            <div>
+                                <h3>${ann.title}</h3>
+                                <p>${ann.content}</p>
+                                ${authorHTML}
+                            </div>
+                        `;
+                        announcementList.appendChild(li);
+                    });
+                }
+
+                // Deshabilitar el botón de borrado si no hay checkboxes
+                const checkboxes = document.querySelectorAll('.delete-checkbox');
+                document.getElementById('delete-selected-btn').style.display = checkboxes.length > 0 ? 'block' : 'none';
+
+            } catch (error) {
+                announcementList.innerHTML = '<li>Error al cargar los anuncios.</li>';
+                console.error(error);
+            }
+        }
+
+        document.getElementById('announcement-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            const type = document.getElementById('type').value;
+
+            await fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'announcement', title, content, announcementType: type, author: currentAdmin.profile })
+            });
+
+            alert('¡Anuncio publicado con éxito! Los usuarios lo verán en la página principal.');
+            e.target.reset();
+            fetchAnnouncements();
+
+            // Notificar a otras pestañas abiertas para que se actualicen
+            announcementChannel.postMessage({ type: 'NEW_ANNOUNCEMENT' });
+
+            // Enviar mensaje al SW para que envíe una notificación PUSH a los usuarios
+            sendMessageToSW({ type: 'NEW_ANNOUNCEMENT_PUSH', payload: { title, content } });
+        });
+
+        document.getElementById('delete-selected-btn').addEventListener('click', async () => {
+            const selectedIds = Array.from(document.querySelectorAll('.delete-checkbox:checked')).map(cb => cb.value);
+
+            if (selectedIds.length === 0) {
+                alert('No has seleccionado ningún anuncio para borrar.');
+                return;
+            }
+
+            if (!confirm(`¿Estás seguro de que quieres borrar ${selectedIds.length} anuncio(s)?`)) return;
+
+            await fetch('/api/messages?announcements=true', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedIds })
+            });
+            
+            alert('Los anuncios seleccionados han sido borrados.');
+            fetchAnnouncements();
+            announcementChannel.postMessage({ type: 'NEW_ANNOUNCEMENT' });
+        });
+
+        // Lógica de autenticación por PIN
+        document.addEventListener('DOMContentLoaded', async () => {
+            const admins = {
+                '26435': { profile: 'elmendezz', greeting: '¡Hola, Super Admin!' },
+                '81532': { profile: 'Gustavo', greeting: '¡Hola, Gustavo!' },
+                '49671': { profile: 'Eveleth', greeting: '¡Hola, Eveleth!' }
+            };
+
+            const pin = prompt('Ingresa tu PIN de administrador para continuar:');
+            currentAdmin = admins[pin];
+
+            if (currentAdmin) {
+                document.getElementById('admin-greeting').textContent = currentAdmin.greeting;
+
+                // Cargar dinámicamente la función para enviar mensajes al SW
+                try {
+                    const notificationLogic = await import('./notification-logic.js');
+                    sendMessageToSW = notificationLogic.sendMessageToSW;
+                    // Asegurarse de que el SW esté listo
+                    if ('serviceWorker' in navigator) {
+                        await navigator.serviceWorker.ready;
+                        console.log('SW listo para recibir mensajes de anuncios.');
+                    }
+                } catch (e) { console.error("No se pudo cargar la lógica de notificaciones", e); }
+
+                fetchAnnouncements();
+            } else {
+                alert('PIN incorrecto. No tienes acceso a esta página.');
+                window.location.href = 'index.html';
+            }
+        });
+
+    </script>
+
+</body>
+</html>

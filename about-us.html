@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Acerca de - Horario 1CV</title>
+    <style>
+        /* Estilos base de la página principal para consistencia */
+        :root {
+            --bg-color: #f0f0f0;
+            --text-color: #333;
+            --container-bg: #fff;
+            --container-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --accent-color: #4CAF50;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --container-bg: #1e1e1e;
+            --container-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            --accent-color: #6200ea;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2em;
+            line-height: 1.6;
+        }
+
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2em;
+            background-color: var(--container-bg);
+            border-radius: 15px;
+            box-shadow: var(--container-shadow);
+        }
+        
+        h1, h2 {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+            margin-top: 1.5em;
+        }
+
+        h1 {
+            text-align: center;
+            border-bottom: none;
+        }
+        
+        .section {
+            margin-bottom: 2em;
+        }
+        
+        .profile-card {
+            background-color: var(--bg-color);
+            border-radius: 10px;
+            padding: 1.5em;
+            margin-top: 1em;
+            border-left: 5px solid var(--accent-color);
+        }
+
+        .profile-card p {
+            margin: 0.5em 0;
+        }
+
+        .profile-card a {
+            color: var(--accent-color);
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .profile-card a:hover {
+            text-decoration: underline;
+        }
+        
+        .back-button {
+            display: inline-block;
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            color: white;
+            background-color: var(--accent-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+            text-align: center;
+            margin-top: 2em;
+        }
+        .back-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .center-text {
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>Acerca de esta Aplicación</h1>
+
+        <div id="creator" class="section">
+            <h2>Creador ( elmendezz - @elmendez_2.0 )</h2>
+            <div class="profile-card">
+                <p><strong>Descripción de la App:</strong> Esta aplicación/sitio web fue diseñado para ayudar a mis compañeros de clase en ver su horario sin tantas trabas, surgió por varios problemas, mis compañeros gastaban su tiempo abriendo el WhatsApp y buscar la imagen, entonces, pensé, dije "¿que tal si lo hacemos fácil y lo convertimos en un sitio web?" y de ahí viene todo este trabajote.</p>
+                <p><strong>Biografía:</strong> <em>Me encanta programación de paginas web y aplicaciones, más si van a ayudar a mis compañeros y más a mi.</em></p>
+            </div>
+        </div>
+
+        <div id="contributors" class="section">
+            <h2>Co-aportadores</h2>
+            <div class="profile-card">
+                <p><strong>Gemini (Asistente de IA de Google)</strong></p>
+                <p><em> Dijo: "Implementé la lógica de notificaciones para Android y iOS, asegurando la compatibilidad entre dispositivos. También reestructuré el código del Service Worker para garantizar su fiabilidad y automaticé la gestión de la caché para un rendimiento óptimo sin conexión."</em></p>
+            </div>
+        </div>
+
+        <div id="testers" class="section">
+            <h2>Beta Testers (La lista aún suma más gente ⚡ )</h2>
+            
+            <div class="profile-card">
+                <p><strong>Info:</strong> <em>Me gusta ayudar a las personas en sus proyectos. - Chris ⚡.</em></p>
+                <p><strong>Aportación/es:</strong>Ayudó en el sistema de notificaciones en iOS, fue algo fácil de implementar pero fue el primero en probarlo, se le quiere mucho 👅.<em></em></p>
+                <p><a href="/aportes/chris.jpg" target="_blank">Ver Los Aportes</a></p>
+            </div>
+
+            <div class="profile-card">
+                <p><strong>Info:</strong> <em>Aún sin texto.</em></p>
+                <p><strong>Tu descripción:</strong> <em>Ayudó demasiado, probó la aplicación que ella misma sugirió implementar, aparte, estuvo activa esperando mis mensajes para seguir probando, gracias a ella esto aún no está abandonado.</em></p>
+                <p><a href="/aportes/mela.jpg" target="_blank">Ver Los Aportes</a></p>
+            </div>
+            
+            <div class="profile-card">
+                <p><strong>Info:</strong> <em>Hola putos  - Lelo .</em></p>
+                <p><strong>Tu descripción:</strong> <em>Ayudó probando la aplicación, igual, también estuvo atenta a ver si funcionaba, probó el primer sistema de notificaciones en Android y la instalación de la aplicación en su versión #2.</em></p>
+                <p><a href="/aportes/lelo.jpg" target="_blank">Ver Los Aportes</a></p>
+            </div>
+            
+            <div class="profile-card">
+                <p><strong>Info:</strong> <em>Ayudó en la versión #3 de la aplicación, gracias a el nos dimos cuenta que la app ya funcionaba completamente.</em></p>
+                <p><strong>Tu descripción:</strong> <em>Desapareció al mandar su imagen jaja.</em></p>
+                <p><a href="/aportes/bersa.jpg" target="_blank">Ver Los Aportes</a></p>
+            </div>
+
+        </div>
+        
+        <div class="center-text">
+            <a href="index.html" class="back-button">Volver al Horario</a>
+        </div>
+    </div>
+
+    <script>
+        // Script para mantener la consistencia del tema (dark/light)
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.dataset.theme = savedTheme;
+    </script>
+</body>
+</html>

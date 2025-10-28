@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#6200ea"/>
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Horario 1CV">
+    <link rel="apple-touch-icon" href="images/icons/apple-touch-icon.png">
+    <title>Horario 1CV - Salón C2/Cómputo 2</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Menú Hamburguesa -->
+    <button id="menu-toggle" class="menu-toggle-btn" aria-label="Abrir menú">☰</button>
+    <div id="side-menu" class="side-menu">
+        <button id="close-menu-btn" class="close-menu-btn" aria-label="Cerrar menú">&times;</button>
+        <div id="user-greeting-menu" class="menu-greeting"></div>
+        <div class="menu-section">
+            <h3>Opciones</h3>
+            <button id="change-username-menu-btn" class="menu-button">✏️ Cambiar Nombre</button>
+            <button id="theme-toggle-menu" class="menu-button">☀️ Cambiar a Claro</button>
+            <button id="reset-theme-btn" class="menu-button">🔄 Sincronizar Tema con Sistema</button>
+            <button id="time-source-toggle" class="menu-button">☁️ Usar Hora de Internet</button>
+            <button id="notifications-btn" class="menu-button" aria-label="Activar notificaciones">🔕 Notificaciones</button>
+            <a href="notification-settings.html" class="menu-button">⚙️ Configurar Notificaciones</a>
+            <button id="register-sw-btn" class="menu-button" style="color: #17a2b8;">⚙️ Registrar Service Worker</button>
+            <button id="clear-cache-btn" class="menu-button" style="color: #dc3545;">🗑️ Limpiar Caché y Recargar</button>
+        </div>
+        <div class="menu-section">
+            <h3>Más Información</h3>
+            <a href="about-us.html" class="menu-button">Acerca de Nosotros</a>
+            <a href="feedback.html" class="menu-button">Reportar/Sugerir</a>
+            <a href="announcements.html" class="menu-button">Toolbox de Anuncios</a>
+            <a href="changelog.html" class="menu-button">Historial de Cambios</a>
+        </div>
+        <div class="menu-section">
+            <h3>Desarrollo</h3>
+            <button id="show-dev-tools-btn" class="menu-button" style="color: #ffc107;">🛠️ Mostrar Herramientas de Desarrollo</button>
+            <a href="debug.html" class="menu-button" style="color: #ffc107;">📈 Panel de Depuración</a>
+        </div>
+    </div>
+    <div id="menu-overlay" class="menu-overlay"></div>
+
+    <div id="aviso"> ⓘ Esta Web App Está En Desarrollo...</div>
+    <button id="next-class-display">Siguiente clase: Cargando...</button>
+    <div class="container">
+        <div id="current-class-display">Cargando horario...</div>
+        <div id="teacher-display"></div>
+        <div id="user-greeting" style="font-size: 0.9em; margin-top: 1em;"></div>
+    </div>
+    <!-- Contenedor para la cuenta regresiva grande -->
+    <div id="next-class-countdown-container" class="next-class-countdown">
+        <div class="countdown-label">Próxima clase en:</div>
+        <div class="countdown-timer">
+            <div class="time-segment" id="days-segment">
+                <span id="countdown-days">0</span>
+                <span class="time-label">Días</span>
+            </div>
+            <div class="time-segment">
+                <span id="countdown-hours">0</span>
+                <span class="time-label">Horas</span>
+            </div>
+            <div class="time-segment">
+                <span id="countdown-minutes">0</span>
+                <span class="time-label">Minutos</span>
+            </div>
+            <div class="time-segment">
+                <span id="countdown-seconds">0</span>
+                <span class="time-label">Segundos</span>
+            </div>
+        </div>
+        <div id="next-class-time-label" class="next-class-time-label"></div>
+    </div>
+    <div id="clock"></div>
+    <div id="countdown"></div>
+    
+    <div class="button-group">
+        <button id="show-schedule-btn" class="styled-button">Mostrar Horario Completo</button>
+        <button id="fullscreen-btn" class="styled-button">Pantalla Completa</button>
+    </div>
+
+    <!-- Contenedor para herramientas de desarrollo, oculto por defecto -->
+    <div id="developer-tools" class="button-group" style="display: none; margin-top: 1em;">
+           <button id="change-username-btn" class="styled-button" style="background-color: #17a2b8;">Cambiar Nombre</button>
+        <a href="time.html" class="styled-button" style="background-color: #17a2b8;">Simular Hora</a>
+        <a href="test.html" class="styled-button" style="background-color: #FFD700;">Pruebas Exhaustivas</a>
+        <button id="test-notification-btn" class="styled-button" style="background-color: #ffc107; color: #000;">Probar Notificación (5s)</button>
+    </div>
+
+    <div id="ios-install-prompt">
+        Para recibir notificaciones, añade esta página a tu pantalla de inicio: Toca el icono de <strong>Compartir</strong> y luego <strong>"Agregar a la pantalla de inicio"</strong>.
+    </div>
+
+    <div class="table-wrapper">
+        <table id="schedule-table">
+            <thead>
+                <tr>
+                    <th>Hora</th>
+                    <th>Lunes</th>
+                    <th>Martes</th>
+                    <th>Miércoles</th>
+                    <th>Jueves</th>
+                    <th>Viernes</th>
+                </tr>
+            </thead>
+            <tbody id="schedule-table-body">
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Contenedor para los anuncios fijos -->
+    <div id="announcements-container" style="margin-top: 2em;"></div>
+
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <a href="horario.jpg" target="_blank">
+                <img id="modalImage" src="horario.jpg" alt="Horario 1CV">
+            </a>
+            <div class="modal-footer">
+                <button id="closeModalBtn">Aceptar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contenedor para los anuncios en vivo (toasts) -->
+    <div id="live-announcements-container"></div>
+
+    <script type="module" src="schedule-data.js"></script>
+    <script type="module" src="schedule-utils.js"></script>
+    <script type="module" src="notification-logic.js"></script>
+    <script type="module" src="ui-logic.js"></script>
+    <script type="module" src="script.js"></script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+              .then(reg => console.log('ServiceWorker registrado:', reg.scope))
+              .catch(err => console.log('Fallo en registro de ServiceWorker:', err));
+          });
+        }
+    </script>
+
+</body>
+</html>

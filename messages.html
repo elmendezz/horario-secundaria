@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensajes Beta - Horario 1CV </title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            justify-content: flex-start;
+            padding: 2em;
+        }
+        .messages-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .message-card {
+            background-color: var(--container-bg);
+            border-radius: 10px;
+            padding: 1em;
+            margin-bottom: 1em;
+            box-shadow: var(--container-shadow);
+            border-left: 4px solid var(--accent-color);
+        }
+        .message-card p {
+            margin: 0;
+        }
+        .message-card .author {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 0.5em;
+        }
+        .message-card .time {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 0.5em;
+            text-align: right;
+        }
+        .message-form {
+            background-color: var(--container-bg);
+            padding: 1.5em;
+            border-radius: 15px;
+            margin-bottom: 2em;
+        }
+        .message-form textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+            font-size: 1em;
+            margin-bottom: 1em;
+        }
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            float: right;
+        }
+        .loading-spinner {
+            text-align: center;
+            font-size: 2em;
+            padding: 2em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="messages-container">
+        <h1 style="color: var(--accent-color); text-align: center;">Mensajes Beta 📣</h1>
+        
+        <div class="message-form">
+            <h2>Enviar un nuevo mensaje</h2>
+            <form id="new-message-form">
+                <textarea id="message-text" placeholder="Escribe tu mensaje aquí..." required></textarea>
+                <button type="submit" class="styled-button">Enviar Mensaje</button>
+            </form>
+        </div>
+
+        <div id="messages-list">
+            <div class="loading-spinner">🔄 Cargando mensajes...</div>
+        </div>
+
+        <div style="text-align: center; margin-top: 2em;">
+            <a href="index.html" class="styled-button" style="background-color: #6c757d;">Volver al Horario</a>
+        </div>
+    </div>
+
+    <script>
+        // Mantener tema
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.dataset.theme = savedTheme;
+
+        const messagesList = document.getElementById('messages-list');
+        const messageForm = document.getElementById('new-message-form');
+        const messageText = document.getElementById('message-text');
+
+        async function fetchMessages() {
+            // Mostrar spinner de carga
+            if (!messagesList.querySelector('.message-card')) {
+                messagesList.innerHTML = '<div class="loading-spinner">🔄 Cargando mensajes...</div>';
+            }
+
+            try {
+                const response = await fetch('/api/messages');
+                const messages = await response.json();
+                renderMessages(messages.reverse()); // Mostrar los más nuevos primero
+            } catch (error) {
+                messagesList.innerHTML = `<p style="color: #dc3545; text-align: center;">Error al cargar los mensajes.</p>`;
+                console.error('Error fetching messages:', error);
+            }
+        }
+
+        function renderMessages(messages) {
+            const originalIndices = new Map();
+            messagesList.innerHTML = '';
+            if (messages.length === 0) {
+                messagesList.innerHTML = '<p style="text-align: center;">No hay mensajes todavía. ¡Sé el primero!</p>';
+                return;
+            }
+            messages.forEach((msg, index) => {
+                const card = document.createElement('div');
+                const originalIndex = messages.length - 1 - index;
+                card.className = 'message-card';
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.onclick = () => deleteMessage(originalIndex, card);
+
+                const text = document.createElement('p');
+                text.textContent = msg.text; 
+
+                const author = document.createElement('div');
+                author.className = 'author';
+                author.textContent = `De: ${msg.author}`;
+
+                const time = document.createElement('div');
+                time.className = 'time';
+                time.textContent = `Enviado: ${msg.time}`;
+
+                card.appendChild(deleteBtn);
+                card.appendChild(text);
+                card.appendChild(time);
+                messagesList.appendChild(card);
+            });
+        }
+
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = messageText.value.trim();
+            if (!text) return;
+
+            const author = localStorage.getItem('username');
+            if (!author) {
+                alert('No se pudo identificar tu usuario. Por favor, recarga la página principal.');
+                return;
+            }
+
+            // Limpiar el input y deshabilitar el formulario para evitar envíos duplicados
+            const originalButtonText = e.submitter.textContent;
+            messageText.value = '';
+            e.submitter.disabled = true;
+            e.submitter.textContent = 'Enviando...';
+
+            try {
+                const response = await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, author })
+                });
+                if (!response.ok) throw new Error('La respuesta del servidor no fue exitosa');
+                // La API fue exitosa, recargamos la lista completa para tener los datos más frescos
+                await fetchMessages();
+            } catch (error) {
+                alert('Error al enviar el mensaje.');
+                console.error('Error posting message:', error);
+            } finally {
+                // Reactivar el formulario
+                e.submitter.disabled = false;
+                e.submitter.textContent = originalButtonText;
+            }
+        });
+
+        // Esta función ya fue modificada en el paso anterior, pero la incluyo para completitud
+        async function deleteMessage(index, cardElement) {            
+            const pin = prompt('Para borrar, ingresa el PIN de administrador:');
+            if (pin !== '26435') {
+                if (pin !== null) { // Si el usuario no presionó "Cancelar"
+                    alert('PIN incorrecto.');
+                }
+                return;
+            }
+
+            cardElement.style.opacity = '0.5'; // Actualización optimista: atenuar el mensaje
+            try {
+                await fetch('/api/messages', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index })
+                });
+                cardElement.remove(); // Actualización optimista: eliminar el elemento de la UI
+            } catch (error) {
+                alert('Error al borrar el mensaje.');
+                console.error('Error deleting message:', error);
+                cardElement.style.opacity = '1'; // Revertir si hay un error
+            }
+        }
+
+        // Carga inicial
+        document.addEventListener('DOMContentLoaded', () => {
+            const username = localStorage.getItem('username');
+            if (!username) {
+                alert('Debes establecer un nombre en la página principal para ver o enviar mensajes.');
+                window.location.href = 'index.html';
+            } else {
+                fetchMessages();
+            }
+        });
+    </script>
+</body>
+</html>

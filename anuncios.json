@@ -1,0 +1,14 @@
+[
+  {
+    "id": "20240521-feedback-feature",
+    "type": "info",
+    "title": "¡Nueva Función de Feedback!",
+    "content": "Ahora puedes reportar errores o enviar sugerencias directamente desde la app usando el nuevo botón 'Reportar/Sugerir'. Tu opinión nos ayuda a mejorar."
+  },
+  {
+    "id": "20240520-welcome-modular",
+    "type": "success",
+    "title": "¡Bienvenido a la Versión Modular!",
+    "content": "Hemos reestructurado todo el código para que la aplicación sea más rápida, estable y fácil de mantener. ¡Disfruta de la experiencia mejorada!"
+  }
+]

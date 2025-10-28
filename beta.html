@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Notis Beta">
+    <link rel="apple-touch-icon" href="images/icons/apple-touch-icon.png"> <title>Prueba de Notificaciones - iOS (Solucionado)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 10px;
+            border: none;
+            background-color: #007aff;
+            color: white;
+            font-weight: bold;
+        }
+        /* Estilo para el aviso de instalación en iOS */
+        #ios-install-prompt {
+            display: none; /* Oculto por defecto */
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #eef7ff;
+            border: 1px solid #007aff;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Notificaciones en iOS</h1>
+        <button id="pruebaBtn">Probar Notificación</button>
+        <div id="ios-install-prompt">
+            Para recibir notificaciones, añade esta página a tu pantalla de inicio: Toca el icono de **Compartir** y luego **"Agregar a la pantalla de inicio"**.
+        </div>
+    </div>
+
+    <script>
+        // Función para verificar si estamos en modo "App" en iOS/Standalone
+        const isInStandaloneMode = () =>
+            (window.navigator.standalone) || (window.matchMedia('(display-mode: standalone)').matches);
+
+        window.addEventListener('load', () => {
+            // Registrar el Service Worker es siempre el primer paso
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(() => console.log('Service Worker registrado.'));
+            }
+
+            const pruebaBtn = document.getElementById('pruebaBtn');
+            const iosInstallPrompt = document.getElementById('ios-install-prompt');
+
+            // Si no estamos en modo App, mostramos el aviso y desactivamos el botón
+            if (!isInStandaloneMode()) {
+                iosInstallPrompt.style.display = 'block';
+                pruebaBtn.disabled = true;
+                pruebaBtn.style.backgroundColor = '#ccc'; // Color gris para indicar que está desactivado
+            }
+
+            pruebaBtn.addEventListener('click', () => {
+                // Volvemos a verificar por si acaso
+                if (!isInStandaloneMode()) {
+                    alert('Esta función solo está disponible después de añadir la app a la pantalla de inicio.');
+                    return;
+                }
+
+                // Si ya estamos en modo App, procedemos con la lógica de notificaciones
+                Notification.requestPermission().then(perm => {
+                    if (perm === 'granted') {
+                        navigator.serviceWorker.ready.then(registration => {
+                            registration.showNotification('¡Funciona en iOS! ✅', {
+                                body: 'La notificación se envió desde la Web App.',
+                                icon: 'images/icons/apple-touch-icon.png'
+                            });
+                        });
+                    } else {
+                        alert('Permiso de notificaciones denegado.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

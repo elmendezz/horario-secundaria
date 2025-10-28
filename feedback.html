@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enviar Feedback - Horario 1CV</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            justify-content: flex-start;
+            padding: 2em;
+        }
+        .feedback-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            padding: 2em;
+            border-radius: 15px;
+            box-shadow: var(--container-shadow);
+        }
+        .feedback-form select,
+        .feedback-form textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+            font-size: 1em;
+            margin-bottom: 1em;
+        }
+        .feedback-form label {
+            display: block;
+            margin-bottom: 0.5em;
+            font-weight: bold;
+        }
+        #feedback-response {
+            margin-top: 1em;
+            padding: 1em;
+            border-radius: 8px;
+            display: none;
+        }
+        #feedback-response.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        #feedback-response.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="feedback-container">
+        <h1 style="color: var(--accent-color); text-align: center;">Reportar Error o Enviar Sugerencia</h1>
+        <p style="text-align: center;">¡Tu opinión es muy valiosa para mejorar la aplicación!</p>
+        
+        <form id="feedback-form" class="feedback-form">
+            <label for="feedback-type">Tipo de Feedback:</label>
+            <select id="feedback-type" required>
+                <option value="bug">🐞 Reportar un Error</option>
+                <option value="enhancement">💡 Sugerir una Mejora</option>
+            </select>
+
+            <label for="feedback-text">Tu Mensaje:</label>
+            <textarea id="feedback-text" placeholder="Describe el error o tu sugerencia con el mayor detalle posible..." rows="6" required></textarea>
+            
+            <button type="submit" class="styled-button">Enviar Feedback</button>
+        </form>
+
+        <div id="feedback-response"></div>
+
+        <div style="text-align: center; margin-top: 2em;">
+            <a href="index.html" class="styled-button" style="background-color: #6c757d;">Volver al Horario</a>
+        </div>
+    </div>
+
+    <script>
+        // Mantener tema
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.dataset.theme = savedTheme;
+
+        const feedbackForm = document.getElementById('feedback-form');
+        const responseDiv = document.getElementById('feedback-response');
+
+        feedbackForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitButton = e.submitter;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando...';
+
+            const type = document.getElementById('feedback-type').value;
+            const text = document.getElementById('feedback-text').value;
+            const author = localStorage.getItem('username') || 'Anónimo';
+
+            try {
+                const res = await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'feedback', feedbackType: type, text, author })
+                });
+
+                if (!res.ok) throw new Error('La respuesta del servidor no fue exitosa.');
+
+                responseDiv.className = 'success';
+                responseDiv.textContent = '¡Gracias! Tu feedback ha sido enviado y se ha creado un ticket para darle seguimiento.';
+                feedbackForm.reset();
+            } catch (error) {
+                responseDiv.className = 'error';
+                responseDiv.textContent = 'Hubo un error al enviar tu feedback. Por favor, inténtalo de nuevo más tarde.';
+                console.error('Error sending feedback:', error);
+            } finally {
+                responseDiv.style.display = 'block';
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enviar Feedback';
+            }
+        });
+    </script>
+</body>
+</html>

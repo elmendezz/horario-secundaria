@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Pruebas Exhaustivas - Horario 1CV</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            justify-content: flex-start; /* Alinea el contenido arriba */
+            padding: 2em;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2em;
+            width: 100%;
+            max-width: 1400px; /* Aumentado para más tarjetas */
+            margin: 0 auto;
+        }
+        .test-card {
+            background-color: var(--container-bg);
+            border-radius: 15px;
+            padding: 1.5em;
+            box-shadow: var(--container-shadow);
+        }
+        .test-card h2 {
+            color: var(--accent-color);
+            margin-top: 0;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5em;
+        }
+        .button-group-test {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+            margin-top: 1em;
+        }
+        .status-light {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        .status-light.green { background-color: #28a745; }
+        .status-light.red { background-color: #dc3545; }
+        .status-light.orange { background-color: #fd7e14; }
+
+        .form-group {
+            margin-bottom: 1em;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5em;
+        }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: var(--accent-color); text-align: center; width: 100%;">Panel de Pruebas Exhaustivas</h1>
+    <p style="text-align: center; width: 100%; margin-bottom: 2em;">Usa esta página para probar todas las funcionalidades de la PWA.</p>
+
+    <div class="test-grid">
+        <!-- Controles Generales -->
+        <div class="test-card">
+            <h2>Controles Generales</h2>
+            <div class="button-group-test">
+                <button id="theme-toggle" class="styled-button">Cambiar Tema</button>
+                <button id="fullscreen-btn" class="styled-button">Pantalla Completa</button>
+                <a href="index.html" class="styled-button" style="background-color: #6c757d;">Volver a la App Principal</a>
+            </div>
+        </div>
+
+        <!-- Notificaciones -->
+        <div class="test-card">
+            <h2>Notificaciones</h2>
+            <p>Permiso: <strong id="notification-permission-status">Desconocido</strong><span id="notification-status-light" class="status-light"></span></p>
+            <div class="button-group-test">
+                <button id="request-permission-btn" class="styled-button">1. Solicitar Permiso</button>
+                <button id="toggle-notifications-btn" class="styled-button">Activar/Desactivar Notificaciones de Clase</button>
+                <button id="test-notification-btn" class="styled-button" style="background-color: #ffc107; color: #000;">Probar Notificación (5s)</button>
+            </div>
+        </div>
+
+        <!-- Simulación de Tiempo -->
+        <div class="test-card">
+            <h2>Simulación de Tiempo</h2>
+            <form id="time-simulation-form">
+                <div class="form-group">
+                    <label for="day">Día:</label>
+                    <select id="day" name="day">
+                        <option value="1">Lunes</option>
+                        <option value="2">Martes</option>
+                        <option value="3">Miércoles</option>
+                        <option value="4">Jueves</option>
+                        <option value="5">Viernes</option>
+                        <option value="6">Sábado</option>
+                        <option value="0">Domingo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="hour">Hora (0-23):</label>
+                    <input type="number" id="hour" name="hour" min="0" max="23" required value="12">
+                </div>
+                <div class="form-group">
+                    <label for="minute">Minuto (0-59):</label>
+                    <input type="number" id="minute" name="minute" min="0" max="59" required value="30">
+                </div>
+                <div class="button-group-test">
+                    <button type="submit" class="styled-button">Simular Hora</button>
+                    <button type="button" id="reset-time-btn" class="styled-button" style="background-color: #dc3545;">Restablecer Hora Real</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Service Worker y Caché -->
+        <div class="test-card">
+            <h2>Service Worker y Caché</h2>
+            <p>Estado del SW: <strong id="sw-status">No registrado</strong><span id="sw-status-light" class="status-light red"></span></p>
+            <div class="button-group-test">
+                <button id="trigger-sync-btn" class="styled-button">Forzar Background Sync</button>
+                <button id="clear-cache-btn" class="styled-button" style="background-color: #dc3545;">Limpiar Todas las Cachés</button>
+                <button id="unregister-sw-btn" class="styled-button" style="background-color: #dc3545;">Desregistrar Service Worker</button>
+            </div>
+        </div>
+
+        <!-- Gestión de Usuario y Feedback -->
+        <div class="test-card">
+            <h2>Usuario y Feedback</h2>
+            <p>Usuario actual: <strong id="current-user-status">Cargando...</strong></p>
+            <div class="button-group-test">
+                <button id="change-username-btn" class="styled-button" style="background-color: #17a2b8;">Cambiar Nombre de Usuario</button>
+                <a href="feedback.html" class="styled-button" style="background-color: #fd7e14;">Ir a página de Feedback</a>
+            </div>
+        </div>
+
+        <!-- Anuncios -->
+        <div class="test-card">
+            <h2>Anuncios</h2>
+            <p>Controla la visibilidad de los anuncios.</p>
+            <div class="button-group-test">
+                <button id="clear-dismissed-announcements-btn" class="styled-button" style="background-color: #ffc107; color: #000;">Mostrar Anuncios de Nuevo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Módulos necesarios para la lógica de la página de pruebas -->
+    <script type="module" src="test-ui-logic.js"></script>
+    
+    <script type="module">
+        import { initializeTestUI } from './test-ui-logic.js';
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializa la UI específica de la página de pruebas
+            initializeTestUI();
+        });
+
+        // Registro del Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('ServiceWorker registrado:', reg.scope))
+                    .catch(err => console.log('Fallo en registro de ServiceWorker:', err));
+            });
+        }
+    </script>
+</body>
+</html>

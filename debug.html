@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Depuración - Horario 1CV</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            justify-content: flex-start;
+            padding: 1em;
+        }
+        .debug-container {
+            max-width: 900px;
+            margin: 1em auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5em;
+        }
+        .debug-card {
+            background-color: var(--container-bg);
+            padding: 1.5em;
+            border-radius: 12px;
+            box-shadow: var(--container-shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+        }
+        .debug-card h2 {
+            color: var(--accent-color);
+            margin-top: 0;
+            border-bottom: 1px solid var(--accent-color);
+            padding-bottom: 0.5em;
+        }
+        .debug-card .status-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            background-color: #6c757d; /* Gris por defecto */
+        }
+        .debug-card .status-light.green { background-color: #28a745; }
+        .debug-card .status-light.red { background-color: #dc3545; }
+        .debug-card .status-light.orange { background-color: #ffc107; }
+
+        .form-group { margin-bottom: 1em; }
+        .form-group label { display: block; margin-bottom: 0.5em; font-weight: bold; }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="full-width" style="margin-bottom: 1em;">
+        <h1 style="color: var(--accent-color);">Panel de Depuración Integral</h1>
+        <a href="index.html" class="styled-button" style="background-color: #6c757d;">Volver al Horario</a>
+    </div>
+
+    <div class="debug-container">
+        <!-- Card: Tiempo y Sincronización -->
+        <div class="debug-card">
+            <h2>🕒 Tiempo y Sincronización</h2>
+            <div class="form-group">
+                <label for="time-source-toggle">Fuente de Hora Actual: <strong id="current-time-source">Cargando...</strong></label>
+                <button id="time-source-toggle" class="styled-button">Cambiar Fuente</button>
+            </div>
+            <hr>
+            <form id="time-simulation-form">
+                <label>Simular Hora</label>
+                <div class="form-group">
+                    <select id="day"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option></select>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="hour" placeholder="Hora (0-23)" min="0" max="23" required oninput="this.value = Math.max(0, Math.min(23, parseInt(this.value) || 0))">
+                </div>
+                <div class="form-group">
+                    <input type="number" id="minute" placeholder="Minuto (0-59)" min="0" max="59" required oninput="this.value = Math.max(0, Math.min(59, parseInt(this.value) || 0))">
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="styled-button">Aplicar Simulación</button>
+                    <button type="button" id="reset-time-btn" class="styled-button" style="background-color: #dc3545;">Quitar Simulación</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Card: Notificaciones -->
+        <div class="debug-card">
+            <h2>🔔 Notificaciones</h2>
+            <p>Estado del Permiso: <span id="notification-status-light" class="status-light"></span><strong id="notification-permission-status">...</strong></p>
+            <p>Notificaciones de Clase: <strong id="class-notifications-status">...</strong></p>
+            <div class="button-group">
+                <button id="request-permission-btn" class="styled-button">Solicitar Permiso</button>
+                <button id="toggle-notifications-btn" class="styled-button">Activar/Desactivar</button>
+                <button id="test-notification-btn" class="styled-button" style="background-color: #ffc107; color: #000;">Probar Notif. (5s)</button>
+            </div>
+        </div>
+
+        <!-- Card: Service Worker y Caché -->
+        <div class="debug-card">
+            <h2>⚙️ Service Worker y Caché</h2>
+            <p>Estado del SW: <span id="sw-status-light" class="status-light"></span><strong id="sw-status">Desconocido</strong></p>
+            <p>Versión de App (Cliente): <strong id="app-version-status">...</strong></p>
+            <p>Versión de Caché (SW): <strong id="sw-version-status">...</strong></p>
+            <div class="button-group">
+                <button id="unregister-sw-btn" class="styled-button" style="background-color: #dc3545;">Desregistrar SW</button>
+                <button id="clear-cache-btn" class="styled-button" style="background-color: #dc3545;">Limpiar Caché</button>
+                <button id="trigger-sync-btn" class="styled-button">Forzar Sync</button>
+            </div>
+        </div>
+
+        <!-- Card: UI y Usuario -->
+        <div class="debug-card">
+            <h2>🎨 UI y Usuario</h2>
+            <p>Usuario Actual: <strong id="current-user-status">...</strong></p>
+            <div class="button-group">
+                <button id="change-username-btn" class="styled-button">Cambiar Nombre</button>
+            </div>
+            <hr>
+            <p>Tema Actual: <strong id="current-theme">...</strong></p>
+            <div class="button-group">
+                <button id="theme-toggle-btn" class="styled-button">Cambiar Tema</button>
+                <button id="reset-theme-btn" class="styled-button">Sincronizar con Sistema</button>
+            </div>
+        </div>
+
+        <!-- Card: Anuncios y Errores -->
+        <div class="debug-card">
+            <h2>📢 Anuncios y Errores</h2>
+            <div class="button-group">
+                <button id="clear-dismissed-announcements-btn" class="styled-button">Mostrar Anuncios de Nuevo</button>
+                <button id="test-error-btn" class="styled-button" style="background-color: #ffc107; color: #000;">Generar Error de Prueba</button>
+            </div>
+            <p>Usa los botones para resetear los anuncios vistos o para probar el sistema de reporte de errores.</p>
+        </div>
+
+        <!-- Card: API Status -->
+        <div class="debug-card">
+            <h2>📡 Estado de APIs</h2>
+            <div id="api-status-container">
+                <p>Probando APIs de tiempo...</p>
+            </div>
+            <button id="re-test-apis-btn" class="styled-button">Volver a Probar</button>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeDebugUI } from './debug-logic.js';
+        
+        // Mantener tema al cargar
+        const savedTheme = localStorage.getItem('theme');
+        const osThemeDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = savedTheme || (osThemeDark ? 'dark' : 'light');
+
+        document.addEventListener('DOMContentLoaded', initializeDebugUI);
+    </script>
+</body>
+</html>
+
+```
+
+### 2. Nueva Lógica de Depuración (`debug-logic.js`)
+
+Este archivo contendrá todo el código JavaScript necesario para que `debug.html` funcione. Reutiliza funciones de otros módulos para no duplicar código.
+
+```diff

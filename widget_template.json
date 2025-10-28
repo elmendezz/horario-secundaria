@@ -1,0 +1,40 @@
+{
+    "type": "AdaptiveCard",
+    "version": "1.5",
+    "body": [
+      {
+        "type": "TextBlock",
+        "text": "🕒 Horario 1CV",
+        "weight": "Bolder",
+        "size": "Medium"
+      },
+      {
+        "type": "TextBlock",
+        "text": "${currentTitle}",
+        "size": "Large",
+        "weight": "Bolder",
+        "color": "Accent",
+        "spacing": "Medium"
+      },
+      {
+        "type": "TextBlock",
+        "text": "${currentSubtitle}",
+        "wrap": true,
+        "spacing": "Small"
+      },
+      {
+        "type": "TextBlock",
+        "text": "${nextTitle}",
+        "weight": "Bolder",
+        "color": "Accent",
+        "spacing": "Medium"
+      },
+      {
+        "type": "TextBlock",
+        "text": "${nextSubtitle}",
+        "wrap": true,
+        "spacing": "Small"
+      }
+    ],
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+}

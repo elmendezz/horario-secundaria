@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Cambios - Horario 1CV</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            justify-content: flex-start;
+            padding: 2em;
+        }
+        .changelog-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            padding: 2em;
+            border-radius: 15px;
+            box-shadow: var(--container-shadow);
+        }
+        .commit-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 2em;
+        }
+        .commit-item {
+            background-color: var(--bg-color);
+            padding: 1em;
+            border-radius: 8px;
+            margin-bottom: 1em;
+            border-left: 4px solid var(--accent-color);
+        }
+        .commit-item p {
+            margin: 0;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .commit-item .meta {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 0.5em;
+        }
+        .loading-spinner {
+            text-align: center;
+            font-size: 2em;
+            padding: 2em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="changelog-container">
+        <h1 style="color: var(--accent-color); text-align: center;">Historial de Cambios</h1>
+        <p style="text-align: center;">Aquí puedes ver las últimas actualizaciones y mejoras de la aplicación, directamente desde el repositorio de código.</p>
+        
+        <ul id="commit-list" class="commit-list">
+            <div class="loading-spinner">🔄 Cargando historial...</div>
+        </ul>
+
+        <div style="text-align: center; margin-top: 2em;">
+            <a href="index.html" class="styled-button" style="background-color: #6c757d;">Volver al Horario</a>
+        </div>
+    </div>
+
+    <script>
+        // Mantener tema
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.dataset.theme = savedTheme;
+
+        const commitList = document.getElementById('commit-list');
+
+        async function fetchCommits() {
+            try {
+                const response = await fetch('/api/messages?commits=true');
+                if (!response.ok) throw new Error('Error al cargar los commits.');
+                const commits = await response.json();
+                renderCommits(commits);
+            } catch (error) {
+                commitList.innerHTML = `<p style="color: #dc3545; text-align: center;">${error.message}</p>`;
+                console.error('Error fetching commits:', error);
+            }
+        }
+
+        function renderCommits(commits) {
+            commitList.innerHTML = '';
+            if (commits.length === 0) {
+                commitList.innerHTML = '<p style="text-align: center;">No se encontró el historial de cambios.</p>';
+                return;
+            }
+            commits.forEach(commitData => {
+                const commit = commitData.commit;
+                const li = document.createElement('li');
+                li.className = 'commit-item';
+
+                const date = new Date(commit.author.date).toLocaleDateString('es-ES', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                });
+
+                li.innerHTML = `
+                    <p>${commit.message}</p>
+                    <div class="meta">Por <strong>${commit.author.name}</strong> el ${date}</div>
+                `;
+                commitList.appendChild(li);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchCommits);
+    </script>
+</body>
+</html>

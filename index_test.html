@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#6200ea"/>
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Horario 1CV">
+    <link rel="apple-touch-icon" href="images/icons/apple-touch-icon.png">
+
+
+    <body>
+    <script src="schedule-logic.js"></script>
+    
+    <script src="app.js"></script> <script>
+        // Service Worker registration can stay here
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+              .then(reg => console.log('ServiceWorker registrado:', reg.scope))
+              .catch(err => console.log('Fallo en registro de ServiceWorker:', err));
+          });
+        }
+    </script>
+</body>
+    <title>Horario 1CV - Salón C2/Cómputo 2</title>
+    <style>
+        /* Versión: 39 */
+        :root {
+            --bg-color: #f0f0f0;
+            --text-color: #333;
+            --container-bg: #fff;
+            --container-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --next-class-bg: #4CAF50;
+            --next-class-hover-bg: #45a049;
+            --table-header-bg: #4CAF50;
+            --table-row-bg: #f9f9f9;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --container-bg: #1e1e1e;
+            --container-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            --next-class-bg: #6200ea;
+            --next-class-hover-bg: #3700b3;
+            --table-header-bg: #3700b3;
+            --table-row-bg: #2a2a2a;
+        }
+        
+        #aviso {
+        	font-family: Arial, sans-serif;
+            text-align: center;
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-size: 0.8em;
+            }
+     
+        
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            text-align: center;
+            padding: 1em;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2em 1.5em;
+            background-color: var(--container-bg);
+            border-radius: 15px;
+            box-shadow: var(--container-shadow);
+            position: relative;
+            max-width: 90%;
+            margin-bottom: 1em;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        #notifications-btn {
+            position: absolute;
+            top: 1em;
+            left: 1em;
+            font-size: 1.5em;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+            visibility: hidden; /* Oculto por defecto hasta que JS lo active */
+        }
+
+        #current-class-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 0.1em;
+            line-height: 1.2;
+            word-wrap: break-word;
+        }
+        #teacher-display {
+            font-size: 1.1em;
+            color: var(--text-color);
+            margin-bottom: 0.8em;
+        }
+        #next-class-display {
+            font-size: 0.8em;
+            padding: 8px 14px;
+            border-radius: 12px;
+            background-color: var(--next-class-bg);
+            color: white;
+            cursor: pointer;
+            border: none;
+            margin-bottom: 0px;
+            z-index: 1;
+            position: relative;
+            transform: translateY(15px);
+            transition: background-color 0.2s ease;
+        }
+        #next-class-display:hover {
+            background-color: var(--next-class-hover-bg);
+        }
+        #clock {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-top: 1em;
+        }
+        #countdown {
+            font-size: 1.2em;
+            color: var(--text-color);
+            margin-top: 0.5em;
+        }
+        #theme-toggle {
+            position: absolute;
+            top: 1em;
+            right: 1em;
+            font-size: 1.5em;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        #schedule-container {
+            margin-top: 2em;
+            max-width: 90%;
+            width: 100%;
+        }
+
+        #schedule-table {
+            width: 100%;
+            min-width: 700px;
+            border-collapse: collapse;
+            margin-top: 1em;
+            display: none;
+        }
+        #schedule-table.visible {
+            display: table;
+        }
+
+        #schedule-table th, #schedule-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid #ccc;
+        }
+        
+        #schedule-table td:first-child {
+            text-align: left;
+        }
+
+        #schedule-table th {
+            background-color: var(--table-header-bg);
+            color: white;
+        }
+
+        #schedule-table tr:nth-child(even) {
+            background-color: var(--table-row-bg);
+        }
+        
+        #schedule-table .receso-row {
+            background-color: #6c757d;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        #schedule-table .receso-row td {
+            border: 1px solid #5a6268;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            position: relative;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid var(--text-color);
+            width: 90%;
+            max-width: 800px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .modal-content img {
+            width: 100%;
+            height: auto;
+            border: none;
+            border-radius:12px;
+            display: block;
+            cursor: pointer;
+        }
+        .modal-footer {
+            margin-top: 15px;
+            text-align: center;
+        }
+        .modal-footer button {
+            background-color: var(--next-class-bg);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .modal-footer button:hover {
+            background-color: var(--next-class-hover-bg);
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 2em;
+            gap: 10px;
+        }
+
+        .styled-button {
+            padding: 12px 25px;
+            border-radius: 50px;
+            border: none;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: white;
+            background-color: var(--next-class-bg);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+        }
+
+        .styled-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            background-color: var(--next-class-hover-bg);
+        }
+
+        .styled-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        [data-theme="dark"] .styled-button {
+            color: white;
+        }
+
+        #ios-install-prompt {
+            display: none;
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #eef7ff;
+            border: 1px solid #007aff;
+            border-radius: 8px;
+            font-size: 1em;
+            color: #333;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                width: 90%;
+                padding: 1.5em 1em;
+            }
+            #current-class-display {
+                font-size: 1.8em;
+            }
+            #teacher-display {
+                font-size: 1em;
+            }
+            #schedule-table th, #schedule-table td {
+                font-size: 0.8em;
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="theme-toggle" aria-label="Cambiar tema">🌑</button>
+    <button id="notifications-btn" aria-label="Activar notificaciones">🔕</button>
+    <div id="aviso"> ⓘ Esta Web App Está En Desarrollo...</div>
+    <button id="next-class-display">Siguiente clase: Cargando...</button>
+    <div class="container">
+        <div id="current-class-display">Cargando horario...</div>
+        <div id="teacher-display"></div>
+    </div>
+    <div id="clock"></div>
+    <div id="countdown"></div>
+    
+    <div class="button-group">
+        <button id="show-schedule-btn" class="styled-button">Mostrar Horario Completo</button>
+        <button id="fullscreen-btn" class="styled-button">Pantalla Completa</button>
+        <button id="test-notification-btn" class="styled-button" style="background-color: #ffc107; color: #000;">Probar Notificación (5s)</button>
+    </div>
+
+    <div id="ios-install-prompt">
+        Para recibir notificaciones, añade esta página a tu pantalla de inicio: Toca el icono de <strong>Compartir</strong> y luego <strong>"Agregar a la pantalla de inicio"</strong>.
+    </div>
+
+    <div class="table-wrapper">
+        <table id="schedule-table">
+            <thead>
+                <tr>
+                    <th>Hora</th>
+                    <th>Lunes</th>
+                    <th>Martes</th>
+                    <th>Miércoles</th>
+                    <th>Jueves</th>
+                    <th>Viernes</th>
+                </tr>
+            </thead>
+            <tbody id="schedule-table-body">
+            </tbody>
+        </table>
+    </div>
+
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <a href="horario.jpg" target="_blank">
+                <img id="modalImage" src="horario.jpg" alt="Horario 1CV">
+            </a>
+            <div class="modal-footer">
+                <button id="closeModalBtn">Aceptar</button>
+            </div>
+        </div>
+    </div>
+    
+
+
+    <script>
+        // Versión: 39 (Lógica de notificaciones robustecida y unificada)
+        
+        const schedule = [
+            // Lunes (1)
+            [
+                { time: [12, 30], name: "Cultura Digital I", teacher: "Armenta Felix Ana Cristina", duration: 50 },
+                { time: [13, 20], name: "Ingles I", teacher: "Falcon Oliovan Andrea Mariel", duration: 50 },
+                { time: [14, 10], name: "Ingles I", teacher: "Falcon Oliovan Andrea Mariel", duration: 50 },
+                { time: [15, 0], name: "Receso", teacher: "Pausa De 20 Minutos.", duration: 20 },
+                { time: [15, 20], name: "Humanidades I", teacher: "Yañez Núñez Lorena Esmeralda", duration: 50 },
+                { time: [16, 10], name: "Lengua y Comunicación I", teacher: "Yañez Núñez Lorena Esmeralda", duration: 50 },
+                { time: [17, 0], name: "La Materia y sus Interacciones", teacher: "Vara López José Alberto", duration: 50 },
+            ],
+            // Martes (2)
+            [
+                
+                { time: [13, 20], name: "Cultura Digital I", teacher: "Armenta Felix Ana Cristina", duration: 50 },
+                { time: [14, 10], name: "Cultura Digital I", teacher: "Armenta Felix Ana Cristina", duration: 50 },
+                { time: [15, 0], name: "Receso", teacher: "Pausa De 20 Minutos.", duration: 20 },
+                { time: [15, 20], name: "Lengua y Comunicación I", teacher: "Yañez Núñez Lorena Esmeralda", duration: 50 },
+                { time: [16, 10], name: "La Materia y sus Interacciones", teacher: "Vara López José Alberto", duration: 50 },
+                { time: [17, 0], name: "Ingles I", teacher: "Falcon Oliovan Andrea Mariel", duration: 50 },
+            ],
+            // Miércoles (3)
+            [
+                
+                { time: [14, 10], name: "Humanidades I", teacher: "Yañez Núñez Lorena Esmeralda", duration: 50 },
+                { time: [15, 0], name: "Receso", teacher: "Pausa De 20 Minutos.", duration: 20 },
+                { time: [15, 20], name: "Humanidades I", teacher: "Yañez Núñez Lorena Esmeralda", duration: 50 },
+                { time: [16, 10], name: "Pensamiento Matemático I", teacher: "Hernández Vargas Keina Yovanna", duration: 50 },
+                { time: [17, 0], name: "La Materia y sus Interacciones", teacher: "Vara López José Alberto", duration: 50 },
+            ],
+            // Jueves (4)
+            [
+                
+                { time: [14, 10], name: "Humanidades I", teacher: "Yañez Núñez Lorena Esmeralda", duration: 50 },
+                { time: [15, 0], name: "Receso", teacher: "Pausa De 20 Minutos.", duration: 20 },
+                { time: [15, 20], name: "Pensamiento Matemático I", teacher: "Hernández Vargas Keina Yovanna", duration: 50 },
+                { time: [16, 10], name: "Pensamiento Matemático I", teacher: "Hernández Vargas Keina Yovanna", duration: 50 },
+                { time: [17, 0], name: "Ciencias Sociales I", teacher: "Yañez Núñez Lorena Esmeralda", duration: 50 },
+            ],
+            // Viernes (5)
+            [
+                { time: [13, 20], name: "Formación Socioemocional I", teacher: "Chávez Arriola Luis Mario", duration: 50 },
+                { time: [14, 10], name: "Ciencias Sociales I", teacher: "Yañez Núñez Lorena Esmeralda", duration: 50 },
+                { time: [15, 0], name: "Receso", teacher: "Pausa De 20 Minutos.", duration: 20 },
+                { time: [15, 20], name: "Lengua y Comunicación I", teacher: "Yañez Núñez Lorena Esmeralda", duration: 50 },
+                { time: [16, 10], name: "La Materia y sus Interacciones", teacher: "Vara López José Alberto", duration: 50 },
+                { time: [17, 0], name: "Pensamiento Matemático I", teacher: "Hernández Vargas Keina Yovanna", duration: 50 },
+            ],
+        ];
+
+        let serverTime = null;
+        let startTime = Date.now();
+        let currentClassEnd = null;
+        let isSimulated = false;
+
+        async function fetchTime() {
+            const simulatedTime = localStorage.getItem('simulatedTime');
+            if (simulatedTime) {
+                const { day, hour, minute } = JSON.parse(simulatedTime);
+                const now = new Date();
+                serverTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() + day, hour, minute, 0);
+                if (serverTime < now) {
+                    serverTime.setDate(serverTime.getDate() + 7);
+                }
+                isSimulated = true;
+            } else {
+                try {
+                    const response = await fetch('http://worldtimeapi.org/api/timezone/America/Tijuana');
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const data = await response.json();
+                    serverTime = new Date(data.datetime);
+                } catch (error) {
+                    console.error('Error fetching time, using local time:', error);
+                    serverTime = new Date();
+                } finally {
+                    isSimulated = false;
+                }
+            }
+        }
+        
+        function updateClock() {
+            if (!serverTime) return;
+            const now = new Date(serverTime.getTime() + (Date.now() - startTime));
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const am_pm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            document.getElementById('clock').textContent = isSimulated ? `Hora Simulada: ${hours}:${minutes}:${seconds} ${am_pm}` : `Hora: ${hours}:${minutes}:${seconds} ${am_pm}`;
+
+            const countdownEl = document.getElementById('countdown');
+            if (currentClassEnd) {
+                const diff = currentClassEnd - now;
+                if (diff > 0) {
+                    const mins = Math.floor(diff / 60000);
+                    const secs = Math.floor((diff % 60000) / 1000);
+                    countdownEl.textContent = `Faltan: ${mins}m ${secs}s para terminar`;
+                } else {
+                    countdownEl.textContent = "Clase finalizada";
+                }
+            } else {
+                const nextClassStartTime = countdownEl.dataset.nextClassStart ? new Date(countdownEl.dataset.nextClassStart) : null;
+                if (nextClassStartTime) {
+                    const diff = nextClassStartTime - now;
+                    if (diff > 0) {
+                        const days = Math.floor(diff / 86400000);
+                        const hoursLeft = Math.floor((diff % 86400000) / 3600000);
+                        const minsLeft = Math.floor((diff % 3600000) / 60000);
+                        const secsLeft = Math.floor((diff % 60000) / 1000);
+                        let countdownText = "Próxima clase en: ";
+                        if (days > 0) countdownText += `${days}d `;
+                        countdownText += `${hoursLeft}h ${minsLeft}m ${secsLeft}s`;
+                        countdownEl.innerHTML = countdownEl.dataset.nextClassTimeDisplay ? `Próxima clase a las ${countdownEl.dataset.nextClassTimeDisplay}<br>${countdownText}` : countdownText;
+                    } else {
+                        countdownEl.textContent = "";
+                    }
+                } else {
+                    countdownEl.textContent = "";
+                }
+            }
+        }
+        
+        function updateSchedule() {
+            if (!serverTime) return;
+            const now = new Date(serverTime.getTime() + (Date.now() - startTime));
+            const dayOfWeek = now.getDay();
+            const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+            const currentClassDisplay = document.getElementById('current-class-display');
+            const teacherDisplay = document.getElementById('teacher-display');
+            const nextClassDisplay = document.getElementById('next-class-display');
+            const countdownEl = document.getElementById('countdown');
+            currentClassEnd = null;
+            countdownEl.dataset.nextClassStart = "";
+            const formatTime = (h, m) => `${(h % 12 || 12)}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+
+            let currentClass = "¡Sin Clases!";
+            let currentTeacher = "Disfruta tu día";
+            let nextClassInfo = { name: "Ninguna" };
+            let foundCurrent = false;
+
+            if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                const todaySchedule = schedule[dayOfWeek - 1];
+                for (let i = 0; i < todaySchedule.length; i++) {
+                    const classItem = todaySchedule[i];
+                    const classStartMinutes = classItem.time[0] * 60 + classItem.time[1];
+                    const classEndMinutes = classStartMinutes + classItem.duration;
+
+                    if (currentTimeInMinutes >= classStartMinutes && currentTimeInMinutes < classEndMinutes) {
+                        currentClass = classItem.name;
+                        currentTeacher = classItem.teacher;
+                        currentClassEnd = new Date(now);
+                        currentClassEnd.setHours(Math.floor(classEndMinutes / 60), classEndMinutes % 60, 0, 0);
+                        if (i + 1 < todaySchedule.length) nextClassInfo = todaySchedule[i + 1];
+                        else nextClassInfo = { name: "Clases terminadas por hoy." };
+                        foundCurrent = true;
+                        break;
+                    }
+                }
+                if (!foundCurrent) {
+                    if (currentTimeInMinutes < (todaySchedule[0].time[0] * 60 + todaySchedule[0].time[1])) {
+                        currentClass = "Aún no empiezan las clases";
+                        currentTeacher = "";
+                        nextClassInfo = todaySchedule[0];
+                    } else {
+                        currentClass = "Clases terminadas por hoy.";
+                        currentTeacher = "";
+                    }
+                }
+            }
+
+            if (!foundCurrent) {
+                for (let i = 1; i <= 7; i++) {
+                    const nextDay = (dayOfWeek + i -1) % 7 + 1;
+                    if (nextDay >= 1 && nextDay <= 5 && schedule[nextDay - 1].length > 0) {
+                        const nextDaySchedule = schedule[nextDay - 1];
+                        nextClassInfo = nextDaySchedule[0];
+                        const nextClassStart = new Date(now);
+                        nextClassStart.setDate(now.getDate() + (nextDay - dayOfWeek + 7) % 7);
+                        nextClassStart.setHours(nextClassInfo.time[0], nextClassInfo.time[1], 0, 0);
+                        countdownEl.dataset.nextClassStart = nextClassStart.toISOString();
+                        countdownEl.dataset.nextClassTimeDisplay = formatTime(nextClassInfo.time[0], nextClassInfo.time[1]);
+                        break;
+                    }
+                }
+            }
+
+            currentClassDisplay.textContent = currentClass;
+            teacherDisplay.textContent = currentTeacher;
+            nextClassDisplay.textContent = `Siguiente clase: ${nextClassInfo.name}`;
+        }
+
+        const themeToggle = document.getElementById('theme-toggle');
+        const htmlElement = document.documentElement;
+        let savedTheme = localStorage.getItem('theme') || 'dark';
+        htmlElement.dataset.theme = savedTheme;
+        themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌑';
+        themeToggle.addEventListener('click', () => {
+            let newTheme = htmlElement.dataset.theme === 'dark' ? 'light' : 'dark';
+            htmlElement.dataset.theme = newTheme;
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌑';
+        });
+
+        const showScheduleBtn = document.getElementById('show-schedule-btn');
+        const scheduleTable = document.getElementById('schedule-table');
+        const scheduleTableBody = document.getElementById('schedule-table-body');
+        function renderScheduleTable() {
+            scheduleTableBody.innerHTML = '';
+            const formatTime = (h, m) => `${(h % 12 || 12)}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+            const allTimes = new Set();
+            schedule.forEach(day => day.forEach(c => allTimes.add(c.time[0] * 60 + c.time[1])));
+            const sortedTimes = Array.from(allTimes).sort((a,b) => a - b);
+            
+            sortedTimes.forEach(timeInMinutes => {
+                if (timeInMinutes === 15 * 60) {
+                    const recesoRow = document.createElement('tr');
+                    recesoRow.className = 'receso-row';
+                    recesoRow.innerHTML = `<td colspan="6">3:00 PM : RECESO DE 20 MIN.</td>`;
+                    scheduleTableBody.appendChild(recesoRow);
+                    return;
+                }
+                const row = document.createElement('tr');
+                const hours = Math.floor(timeInMinutes/60), minutes = timeInMinutes%60;
+                row.innerHTML = `<td>${formatTime(hours, minutes)}</td>` + 
+                                [0,1,2,3,4].map(dayIndex => {
+                                    const classItem = schedule[dayIndex].find(c => c.time[0]*60 + c.time[1] === timeInMinutes);
+                                    return `<td>${classItem ? `<strong>${classItem.name}</strong><br>${classItem.teacher}` : ''}</td>`;
+                                }).join('');
+                scheduleTableBody.appendChild(row);
+            });
+        }
+        showScheduleBtn.addEventListener('click', () => {
+            scheduleTable.classList.toggle('visible');
+            showScheduleBtn.textContent = scheduleTable.classList.contains('visible') ? 'Ocultar Horario' : 'Mostrar Horario';
+        });
+        
+        const modal = document.getElementById('imageModal');
+        document.getElementById('next-class-display').addEventListener('click', () => modal.style.display = "block");
+        document.getElementById('closeModalBtn').addEventListener('click', () => modal.style.display = "none");
+        
+        // =================== LÓGICA DE NOTIFICACIONES UNIFICADA Y ROBUSTA ===================
+        function sendMessageToSW(message) {
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage(message);
+            } else if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => reg.active.postMessage(message));
+            }
+        }
+
+        function initializeNotifications() {
+            const notificationsBtn = document.getElementById('notifications-btn');
+            const iosInstallPrompt = document.getElementById('ios-install-prompt');
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
+
+            if (isIOS && !isInStandaloneMode()) {
+                notificationsBtn.style.display = 'none';
+                iosInstallPrompt.style.display = 'block';
+                return;
+            }
+
+            iosInstallPrompt.style.display = 'none';
+            if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+                console.warn('Notificaciones o Service Workers no soportados.');
+                return;
+            }
+            
+            navigator.serviceWorker.ready.then(() => {
+                console.log('Service Worker listo. Configurando botón de notificaciones.');
+                if (localStorage.getItem('notificationsEnabled') === 'true' && Notification.permission === 'granted') {
+                    notificationsBtn.textContent = '🔔';
+                    sendMessageToSW({ type: 'SET_NOTIFICATIONS', enabled: true });
+                } else {
+                    notificationsBtn.textContent = '🔕';
+                    if (Notification.permission !== 'granted') localStorage.setItem('notificationsEnabled', 'false');
+                }
+                notificationsBtn.style.visibility = 'visible';
+            }).catch(error => console.error('Error al inicializar Service Worker:', error));
+
+            notificationsBtn.addEventListener('click', () => {
+                if (localStorage.getItem('notificationsEnabled') === 'true' && Notification.permission === 'granted') {
+                    localStorage.setItem('notificationsEnabled', 'false');
+                    notificationsBtn.textContent = '🔕';
+                    sendMessageToSW({ type: 'SET_NOTIFICATIONS', enabled: false });
+                    console.log('Notificaciones desactivadas.');
+                } else {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            localStorage.setItem('notificationsEnabled', 'true');
+                            notificationsBtn.textContent = '🔔';
+                            sendMessageToSW({ type: 'SET_NOTIFICATIONS', enabled: true });
+                            console.log('Permiso concedido. Notificaciones activadas.');
+                        } else {
+                            console.log('Permiso denegado.');
+                            alert('No has dado permiso. Puedes cambiarlo en la configuración de tu navegador.');
+                        }
+                    });
+                }
+            });
+        }
+        
+        document.getElementById('fullscreen-btn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => alert(`Error: ${err.message}`));
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        document.getElementById('test-notification-btn').addEventListener('click', () => {
+            if (Notification.permission !== 'granted') {
+                alert('Primero debes permitir las notificaciones usando el ícono 🔔.');
+                return;
+            }
+            sendMessageToSW({ type: 'TEST_NOTIFICATION', delay: 5 });
+            alert('Recibirás una notificación en 5 segundos. Puedes cambiar de app o bloquear la pantalla para verla.');
+        });
+
+        fetchTime().then(() => {
+            updateSchedule();
+            renderScheduleTable();
+            initializeNotifications();
+            const updateInterval = isSimulated ? 1000 : 10000;
+            setInterval(updateSchedule, updateInterval);
+            setInterval(updateClock, 1000);
+        });
+    </script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+              .then(reg => console.log('ServiceWorker registrado:', reg.scope))
+              .catch(err => console.log('Fallo en registro de ServiceWorker:', err));
+          });
+        }
+    </script>
+
+</body>
+</html>

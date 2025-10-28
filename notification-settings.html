@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar Notificaciones - Horario 1CV</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            justify-content: flex-start;
+            padding: 2em;
+        }
+        .settings-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            padding: 2em;
+            border-radius: 15px;
+            box-shadow: var(--container-shadow);
+        }
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1em 0;
+            border-bottom: 1px solid var(--bg-color);
+        }
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+        .setting-item label {
+            font-size: 1.1em;
+        }
+        .setting-item select, .setting-item .toggle-switch {
+            margin-left: 1em;
+        }
+        .setting-item select {
+            padding: 8px;
+            border-radius: 5px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--text-color);
+        }
+        .status-text {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 0.5em;
+        }
+        #permission-status.denied {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        #permission-status.granted {
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="settings-container">
+        <h1 style="color: var(--accent-color); text-align: center;">Configurar Notificaciones</h1>
+        <p id="permission-status" class="status-text" style="text-align: center;">Cargando estado de los permisos...</p>
+
+        <div class="setting-item">
+            <label for="notifications-enabled">Activar notificaciones de clase</label>
+            <button id="notifications-enabled-btn" class="styled-button">Activar</button>
+        </div>
+
+        <div class="setting-item">
+            <label for="notification-lead-time">Notificarme antes de la clase:</label>
+            <select id="notification-lead-time" name="lead-time">
+                <option value="1">1 minuto antes</option>
+                <option value="2">2 minutos antes</option>
+                <option value="5">5 minutos antes</option>
+                <option value="10">10 minutos antes</option>
+                <option value="15">15 minutos antes</option>
+            </select>
+        </div>
+
+        <div class="setting-item">
+             <label>Probar notificación</label>
+             <button id="test-notification-btn" class="styled-button" style="background-color: #ffc107; color: #000;">Probar (5s)</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 2em;">
+            <a href="index.html" class="styled-button" style="background-color: #6c757d;">Guardar y Volver</a>
+        </div>
+    </div>
+
+    <script type="module" src="notification-settings-logic.js"></script>
+    <script type="module">
+        import { initializeNotificationSettings } from './notification-settings-logic.js';
+
+        // Mantener tema
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.dataset.theme = savedTheme;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Registrar SW si no está
+            if ('serviceWorker' in navigator && !navigator.serviceWorker.controller) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => {
+                        console.log('ServiceWorker registrado desde settings:', reg.scope);
+                        // Esperar a que el SW esté listo para inicializar la lógica
+                        return navigator.serviceWorker.ready;
+                    })
+                    .then(() => initializeNotificationSettings())
+                    .catch(err => console.log('Fallo en registro de ServiceWorker:', err));
+            } else {
+                initializeNotificationSettings();
+            }
+        });
+    </script>
+</body>
+</html>
